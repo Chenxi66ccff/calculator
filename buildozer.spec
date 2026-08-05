@@ -26,7 +26,7 @@ orientation = portrait
 fullscreen = 0
 
 # 目标架构（arm64-v8a 覆盖现代手机，含 Android 16 设备）
-android.archs = arm64-v8a, armeabi-v7a
+android.archs = arm64-v8a
 
 # SDK / NDK
 android.api = 35
