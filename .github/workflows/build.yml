@@ -34,8 +34,8 @@ jobs:
       - name: Set up Android SDK for buildozer
         run: |
           SDK=~/.buildozer/android/platform/android-sdk
-          mkdir -p "$SDK/cmdline-tools/latest"
-          cp -r "$ANDROID_HOME/cmdline-tools/latest/." "$SDK/cmdline-tools/latest/"
+          mkdir -p "$SDK/tools"
+          cp -r "$ANDROID_HOME/cmdline-tools/latest/." "$SDK/tools/"
           cp -r "$ANDROID_HOME/licenses" "$SDK/"
 
       - name: Cache buildozer global directory
