@@ -1,4 +1,3 @@
-
 name: Build Android APK
 
 on:
@@ -47,4 +46,8 @@ jobs:
       - name: Build debug APK
         run: buildozer android debug
 
-      - name
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: calculator-debug-apk
+          path: bin/*.apk
