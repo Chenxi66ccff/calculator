@@ -12,30 +12,50 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build debug APK (official buildozer Docker image)
+      - name: Pull buildozer image
+        run: docker pull kivy/buildozer:latest
+
+      # Stage 1: 让 buildozer 下载 SDK/NDK、编译 python3 与 kivy。
+      # 它会在"安装纯 Python 模块"这一步失败 —— 这是预期的，因为那正是接下来要修的地方。
+      - name: Stage 1 - prepare (expected to fail at pure-python install)
         run: |
-          docker run --rm \
-            -v "$GITHUB_WORKSPACE:/home/user/hostcwd" \
-            -e VERSION_charset-normalizer=3.4.4 \
-            --entrypoint /bin/bash \
-            kivy/buildozer:latest \
-            -c '
-              # p4a 在 run_pymodules_install 里支持用环境变量 VERSION_<模块名>
-              # 覆盖模块版本（源码：os.environ.get(f"VERSION_{module}")）。
-              #
-              # 背景：p4a 自动解析纯 Python 依赖时会把 Android 平台标记传给 pip
-              # （--platform=android_24_arm64_v8a --python-version=3.14），
-              # pip 在 --report 里为 charset-normalizer 3.5.2 编造出一个并不存在的
-              # 文件名 charset_normalizer-3.5.2-cp314-cp314-android_24_arm64_v8a.whl，
-              # p4a 再拿这个假 URL 去安装，报 "is not a supported wheel on this platform"。
-              # 本地实测：3.4.4 及更早版本会正常解析为 py3-none-any.whl。
-              #
-              # 同时把 p4a 自建的构建 venv 里的 pip 钉住，避免其升级到新版后行为漂移。
-              printf "pip==25.3\n" > /home/user/constraints.txt
-              export PIP_CONSTRAINT=/home/user/constraints.txt
-              cd /home/user/hostcwd
-              buildozer android debug
-            '
+          docker run --rm -v "$GITHUB_WORKSPACE:/home/user/hostcwd" kivy/buildozer:latest android debug || true
+
+      # 修正 p4a 的 URL 处理。
+      # p4a 用 pip --dry-run --report 解析依赖时把 Android 平台标记传给了 pip，
+      # pip 据此为某些包伪造出并不存在的 wheel URL
+      # （charset-normalizer 3.5.2 被写成 ...-cp314-cp314-android_24_arm64_v8a.whl），
+      # p4a 再拿这个假 URL 安装，报 "is not a supported wheel on this platform"。
+      # 补丁：若文件名不是本包装出来的 wheel，就退回用普通 PyPI 包 URL，让 pip 自行解析下载。
+      - name: Patch p4a URL handling
+        run: |
+          echo "aW1wb3J0IHN5cywgYmFzZTY0CmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aAoKcCA9IFBhdGgoIi9o
+b21lL3VzZXIvaG9zdGN3ZC8uYnVpbGRvemVyL2FuZHJvaWQvcGxhdGZvcm0vcHl0aG9uLWZvci1h
+bmRyb2lkL3B5dGhvbmZvcmFuZHJvaWQvYnVpbGQucHkiKQppZiBub3QgcC5leGlzdHMoKToKICAg
+IHByaW50KCJQQVRDSC1GQUlMOiBidWlsZC5weSBub3QgZm91bmQ6IiwgcCkKICAgIHN5cy5leGl0
+KDEpCgpzcmMgPSBwLnJlYWRfdGV4dChlbmNvZGluZz0idXRmLTgiKQpvbGQgPSAncHJvY2Vzc2Vk
+X21vZHVsZXMuYXBwZW5kKG1vZHVsZVsiZG93bmxvYWRfaW5mbyJdWyJ1cmwiXSknCm5ldyA9ICgK
+ICAgICdfdXJsID0gbW9kdWxlWyJkb3dubG9hZF9pbmZvIl1bInVybCJdXG4nCiAgICAnICAgICAg
+ICAgICAgICAgIF9mbiA9IGJhc2VuYW1lKHVybHBhcnNlKF91cmwpLnBhdGgpXG4nCiAgICAnICAg
+ICAgICAgICAgICAgIGlmIF91cmwuZW5kc3dpdGgoIi53aGwiKSBhbmQgbm90IGlzX3doZWVsX2Nv
+bXBhdGlibGUoX2ZuLCBhcmNoLCBjdHgpOlxuJwogICAgJyAgICAgICAgICAgICAgICAgICAgX3Vy
+bCA9ICJodHRwczovL3B5cGkub3JnL3NpbXBsZS97fS8iLmZvcm1hdChtbmFtZSlcbicKICAgICcg
+ICAgICAgICAgICAgICAgcHJvY2Vzc2VkX21vZHVsZXMuYXBwZW5kKF91cmwpJwopCgppZiAicHlw
+aS5vcmcvc2ltcGxlIiBpbiBzcmM6CiAgICBwcmludCgiUEFUQ0gtU0tJUDogYWxyZWFkeSBwYXRj
+aGVkIikKZWxpZiBvbGQgbm90IGluIHNyYzoKICAgIHByaW50KCJQQVRDSC1GQUlMOiB0YXJnZXQg
+Y29kZSBub3QgZm91bmQiKQogICAgaSA9IHNyYy5maW5kKCJkb3dubG9hZF9pbmZvIikKICAgIHBy
+aW50KCJuZWFyYnk6IiwgcmVwcihzcmNbbWF4KDAsIGkgLSAzMDApOmkgKyA0MDBdKSkKICAgIHN5
+cy5leGl0KDEpCmVsc2U6CiAgICBzcmMgPSBzcmMucmVwbGFjZShvbGQsIG5ldywgMSkKICAgIGlm
+ICJmcm9tIHVybGxpYi5wYXJzZSBpbXBvcnQgdXJscGFyc2UiIG5vdCBpbiBzcmM6CiAgICAgICAg
+c3JjID0gc3JjLnJlcGxhY2UoImltcG9ydCBzeXNcbiIsICJpbXBvcnQgc3lzXG5mcm9tIHVybGxp
+Yi5wYXJzZSBpbXBvcnQgdXJscGFyc2VcbiIsIDEpCiAgICBwLndyaXRlX3RleHQoc3JjLCBlbmNv
+ZGluZz0idXRmLTgiKQogICAgcHJpbnQoIlBBVENILU9LOiBwNGEgVVJMIGhhbmRsaW5nIGZpeGVk
+IikK" | base64 -d > /tmp/patch_p4a.py
+          docker run --rm -i -v "$GITHUB_WORKSPACE:/home/user/hostcwd" --entrypoint python3 - kivy/buildozer:latest < /tmp/patch_p4a.py
+
+      - name: Stage 2 - build APK
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/home/user/hostcwd" kivy/buildozer:latest android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
