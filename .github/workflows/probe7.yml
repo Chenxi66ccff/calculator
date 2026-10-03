@@ -1,0 +1,24 @@
+name: Probe7
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/probe7.yml
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull image
+        run: docker pull kivy/buildozer:latest
+
+      - name: Prepare p4a
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/home/user/hostcwd" kivy/buildozer:latest android debug || true
+
+      - name: Read p4a source
+        run: |
+          base64 -d .github/patch_probe7.b64 > probe7.py
+          docker run --rm -i -v "$GITHUB_WORKSPACE:/home/user/hostcwd" --entrypoint python3 - kivy/buildozer:latest < probe7.py
