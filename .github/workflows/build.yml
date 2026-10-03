@@ -21,7 +21,7 @@ jobs:
         run: |
           docker run --rm -v "$GITHUB_WORKSPACE:/home/user/hostcwd" kivy/buildozer:latest android debug || true
 
-      # 修正 p4a 的 URL 处理。
+      # 修正 p4a 的 URL 处理缺陷。
       # p4a 用 pip --dry-run --report 解析依赖时把 Android 平台标记传给了 pip，
       # pip 据此为某些包伪造出并不存在的 wheel URL
       # （charset-normalizer 3.5.2 被写成 ...-cp314-cp314-android_24_arm64_v8a.whl），
@@ -29,29 +29,11 @@ jobs:
       # 补丁：若文件名不是本包装出来的 wheel，就退回用普通 PyPI 包 URL，让 pip 自行解析下载。
       - name: Patch p4a URL handling
         run: |
-          echo "aW1wb3J0IHN5cywgYmFzZTY0CmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aAoKcCA9IFBhdGgoIi9o
-b21lL3VzZXIvaG9zdGN3ZC8uYnVpbGRvemVyL2FuZHJvaWQvcGxhdGZvcm0vcHl0aG9uLWZvci1h
-bmRyb2lkL3B5dGhvbmZvcmFuZHJvaWQvYnVpbGQucHkiKQppZiBub3QgcC5leGlzdHMoKToKICAg
-IHByaW50KCJQQVRDSC1GQUlMOiBidWlsZC5weSBub3QgZm91bmQ6IiwgcCkKICAgIHN5cy5leGl0
-KDEpCgpzcmMgPSBwLnJlYWRfdGV4dChlbmNvZGluZz0idXRmLTgiKQpvbGQgPSAncHJvY2Vzc2Vk
-X21vZHVsZXMuYXBwZW5kKG1vZHVsZVsiZG93bmxvYWRfaW5mbyJdWyJ1cmwiXSknCm5ldyA9ICgK
-ICAgICdfdXJsID0gbW9kdWxlWyJkb3dubG9hZF9pbmZvIl1bInVybCJdXG4nCiAgICAnICAgICAg
-ICAgICAgICAgIF9mbiA9IGJhc2VuYW1lKHVybHBhcnNlKF91cmwpLnBhdGgpXG4nCiAgICAnICAg
-ICAgICAgICAgICAgIGlmIF91cmwuZW5kc3dpdGgoIi53aGwiKSBhbmQgbm90IGlzX3doZWVsX2Nv
-bXBhdGlibGUoX2ZuLCBhcmNoLCBjdHgpOlxuJwogICAgJyAgICAgICAgICAgICAgICAgICAgX3Vy
-bCA9ICJodHRwczovL3B5cGkub3JnL3NpbXBsZS97fS8iLmZvcm1hdChtbmFtZSlcbicKICAgICcg
-ICAgICAgICAgICAgICAgcHJvY2Vzc2VkX21vZHVsZXMuYXBwZW5kKF91cmwpJwopCgppZiAicHlw
-aS5vcmcvc2ltcGxlIiBpbiBzcmM6CiAgICBwcmludCgiUEFUQ0gtU0tJUDogYWxyZWFkeSBwYXRj
-aGVkIikKZWxpZiBvbGQgbm90IGluIHNyYzoKICAgIHByaW50KCJQQVRDSC1GQUlMOiB0YXJnZXQg
-Y29kZSBub3QgZm91bmQiKQogICAgaSA9IHNyYy5maW5kKCJkb3dubG9hZF9pbmZvIikKICAgIHBy
-aW50KCJuZWFyYnk6IiwgcmVwcihzcmNbbWF4KDAsIGkgLSAzMDApOmkgKyA0MDBdKSkKICAgIHN5
-cy5leGl0KDEpCmVsc2U6CiAgICBzcmMgPSBzcmMucmVwbGFjZShvbGQsIG5ldywgMSkKICAgIGlm
-ICJmcm9tIHVybGxpYi5wYXJzZSBpbXBvcnQgdXJscGFyc2UiIG5vdCBpbiBzcmM6CiAgICAgICAg
-c3JjID0gc3JjLnJlcGxhY2UoImltcG9ydCBzeXNcbiIsICJpbXBvcnQgc3lzXG5mcm9tIHVybGxp
-Yi5wYXJzZSBpbXBvcnQgdXJscGFyc2VcbiIsIDEpCiAgICBwLndyaXRlX3RleHQoc3JjLCBlbmNv
-ZGluZz0idXRmLTgiKQogICAgcHJpbnQoIlBBVENILU9LOiBwNGEgVVJMIGhhbmRsaW5nIGZpeGVk
-IikK" | base64 -d > /tmp/patch_p4a.py
-          docker run --rm -i -v "$GITHUB_WORKSPACE:/home/user/hostcwd" --entrypoint python3 - kivy/buildozer:latest < /tmp/patch_p4a.py
+          base64 -d .github/patch_p4a.b64 > patch_p4a.py
+          docker run --rm -i \
+            -v "$GITHUB_WORKSPACE:/home/user/hostcwd" \
+            --entrypoint python3 \
+            kivy/buildozer:latest < patch_p4a.py
 
       - name: Stage 2 - build APK
         run: |
