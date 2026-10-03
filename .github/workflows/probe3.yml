@@ -1,0 +1,31 @@
+name: Probe3
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/probe3.yml
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: A. 能否用 --entrypoint 跑 python3
+        run: |
+          docker run --rm --entrypoint python3 kivy/buildozer:latest -c "print('A-OK', 1+1)"
+
+      - name: B. 带连字符的环境变量名能否传递
+        run: |
+          docker run --rm \
+            -e VERSION_charset-normalizer=AAA \
+            --entrypoint python3 \
+            kivy/buildozer:latest -c "import os; print('B-hits:', sorted(k for k in os.environ if 'VERSION' in k))"
+
+      - name: C. entrypoint 默认值是什么
+        run: |
+          docker inspect --format "C-entrypoint={{.Config.Entrypoint}} C-workdir={{.Config.WorkingDir}} C-cmd={{.Config.Cmd}}" kivy/buildozer:latest
+
+      - name: D. 用 buildozer 作为入口能不能跑通
+        run: |
+          docker run --rm kivy/buildozer:latest --version 2>&1 | head -3 || echo "D-failed"
