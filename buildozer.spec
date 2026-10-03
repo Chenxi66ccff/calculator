@@ -16,16 +16,12 @@ source.exclude_dirs = .venv,bin,.buildozer,.github,.git,__pycache__
 version = 1.0.0
 
 # 依赖
-# 说明：
-#   kivy 会带出 requests 依赖链（requests -> charset-normalizer 等），
-#   python-for-android 默认自动解析这些纯 Python 包，但它向 pip 传入了
-#   Android 平台标记（--platform=android_24_arm64_v8a --python-version=3.14），
-#   导致 pip 在 --report 里为 charset-normalizer 3.5.2 编造出一个并不存在的
-#   文件名 charset_normalizer-3.5.2-cp314-cp314-android_24_arm64_v8a.whl，
-#   p4a 再拿这个假 URL 去安装，必然失败。
-#   实测：charset-normalizer 3.4.4 及更早版本会正常解析为 py3-none-any.whl。
-#   故显式钉住整条依赖链，避免自动解析选到有问题的版本。
-requirements = python3,kivy,charset-normalizer==3.4.4,requests,urllib3,idna,certifi
+# 说明：这里把 requests 依赖链的每个包都显式列出，使 p4a 的内部模块列表
+# 与这些名字完全一致，便于用环境变量 VERSION_<模块名> 精确覆盖版本。
+# 原因见 .github/workflows/build.yml 中的注释：
+# p4a 自动解析纯 Python 依赖时会给 pip 传 Android 平台标记，
+# 导致 pip 为 charset-normalizer 3.5.2 编造出不存在的 wheel 文件名。
+requirements = python3,kivy,certifi,charset-normalizer,idna,requests,urllib3
 
 # 自动接受 Android SDK license
 # 注意：必须写在 [app] 段内！buildozer 读取的是 [app].android.accept_sdk_license，
