@@ -15,17 +15,12 @@ source.exclude_dirs = .venv,bin,.buildozer,.github,.git,__pycache__
 # 入口与版本
 version = 1.0.0
 
-# 依赖
-# 说明：这里把 requests 依赖链的每个包都显式列出，使 p4a 的内部模块列表
-# 与这些名字完全一致，便于用环境变量 VERSION_<模块名> 精确覆盖版本。
-# 原因见 .github/workflows/build.yml 中的注释：
-# p4a 自动解析纯 Python 依赖时会给 pip 传 Android 平台标记，
-# 导致 pip 为 charset-normalizer 3.5.2 编造出不存在的 wheel 文件名。
-requirements = python3,kivy,certifi,charset-normalizer,idna,requests,urllib3
+# 依赖：本项目是纯离线计算器，不需要任何网络功能。
+# Kivy 自身会把 requests（以及 charset-normalizer 等）作为依赖带进来，
+# p4a 会在安装阶段处理它们。相关细节见 .github/bz_run2.py 的说明。
+requirements = python3,kivy
 
-# 自动接受 Android SDK license
-# 注意：必须写在 [app] 段内！buildozer 读取的是 [app].android.accept_sdk_license，
-# 写到 [buildozer] 段无效（configparser 不会把带点的键归并到 [app]）。
+# 自动接受 Android SDK license（必须写在 [app] 段）
 android.accept_sdk_license = True
 
 # 图标
@@ -35,7 +30,7 @@ icon.filename = %(source.dir)s/icon.png
 orientation = portrait
 fullscreen = 0
 
-# 目标架构（arm64-v8a 覆盖现代手机，含 Android 16 设备）
+# 目标架构
 android.archs = arm64-v8a
 
 # SDK / NDK
