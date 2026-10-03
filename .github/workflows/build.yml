@@ -15,19 +15,21 @@ jobs:
       - name: Pull buildozer image
         run: docker pull kivy/buildozer:latest
 
-      # Stage 1：让 buildozer 下载 SDK/NDK、编译 python3 与 kivy。
-      # 它会在"安装纯 Python 模块"处失败，这是预期的。
+      # Stage 1：准备（下载 SDK/NDK、编译 python3 与 kivy），
+      # 预期在"安装纯 Python 模块"处失败。
       - name: Stage 1 - prepare (expected failure)
         run: |
           docker run --rm -v "$GITHUB_WORKSPACE:/home/user/hostcwd" kivy/buildozer:latest android debug || true
 
-      # 修正 p4a：用 pip --report 推出的 wheel 文件名去安装之前，先检查那个文件名
-      # 是否真的是可用 wheel；不是的话退回普通 PyPI 包 URL，让 pip 自己解析下载。
-      # 同时清掉 .pyc 缓存（否则 Python 可能继续用旧的已编译代码）。
-      - name: Patch p4a and clear pyc cache
+      # 修正 p4a 生成 requirements.txt 的地方：
+      # pip --report 会依据 Android 平台标记伪造 wheel 文件名，
+      # 该文件在 PyPI 上并不存在。补丁在写入前检查平台标签是否为 any，
+      # 不是则退回普通 PyPI 包 URL，让 pip 自行解析正确版本。
+      # 同时清除 .pyc 缓存，确保新代码生效。
+      - name: Patch p4a requirements generation
         run: |
-          base64 -d .github/patch_p4a2.b64 > patch_p4a2.py
-          docker run --rm -i -v "$GITHUB_WORKSPACE:/home/user/hostcwd" --entrypoint python3 - kivy/buildozer:latest < patch_p4a2.py
+          base64 -d .github/patch_p4a3.b64 > patch_p4a3.py
+          docker run --rm -i -v "$GITHUB_WORKSPACE:/home/user/hostcwd" --entrypoint python3 - kivy/buildozer:latest < patch_p4a3.py
 
       - name: Stage 2 - build APK
         run: |
