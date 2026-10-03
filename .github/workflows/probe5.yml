@@ -1,0 +1,24 @@
+name: Probe5
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/probe5.yml
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull image
+        run: docker pull kivy/buildozer:latest
+
+      - name: Stage 1 prepare (expected failure)
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/home/user/hostcwd" kivy/buildozer:latest android debug || true
+
+      - name: Inspect p4a state
+        run: |
+          base64 -d .github/patch_probe.b64 > probe.py
+          docker run --rm -i -v "$GITHUB_WORKSPACE:/home/user/hostcwd" --entrypoint python3 - kivy/buildozer:latest < probe.py
