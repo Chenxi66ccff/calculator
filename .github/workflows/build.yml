@@ -14,24 +14,10 @@ jobs:
 
       - name: Build debug APK (official buildozer Docker image)
         run: |
-          cat > /tmp/build.sh <<'EOF'
-          #!/bin/bash
-          # 第一次尝试：若 SDK 工具未就绪会因 license 失败，但会完成 SDK/NDK 下载
-          buildozer android debug && exit 0
-          # 自动接受所有 Android SDK license
-          SDKMANAGER=$(find /home/user/.buildozer -name sdkmanager -type f | head -n 1)
-          if [ -n "$SDKMANAGER" ]; then
-            yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
-          fi
-          # 第二次运行：正式构建
-          buildozer android debug
-          EOF
           docker run --rm \
             -v "$GITHUB_WORKSPACE:/home/user/hostcwd" \
-            -v /tmp/build.sh:/home/user/build.sh \
-            --entrypoint /bin/bash \
             kivy/buildozer:latest \
-            /home/user/build.sh
+            android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
