@@ -1,0 +1,23 @@
+name: probe12
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/probe12.yml
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pull image
+        run: docker pull kivy/buildozer:latest
+
+      - name: Stage 1 (expected failure)
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/home/user/hostcwd" kivy/buildozer:latest android debug || true
+
+      - name: Dump p4a source
+        run: |
+          base64 -d .github/probe12.b64 > probe12.py
+          docker run --rm -v "$GITHUB_WORKSPACE:/home/user/hostcwd"             -v "$GITHUB_WORKSPACE/probe12.py:/tmp/probe12.py:ro"             --entrypoint python3 kivy/buildozer:latest /tmp/probe12.py
