@@ -21,9 +21,20 @@ p4a 再把这个假 URL 写进 requirements.txt 并用 pip -r 安装，于是必
 p4a 在 build_recipes() 里以 `run_pymodules_install(...)` 的形式调用它，因此只要在
 buildozer 真正执行前把这个模块属性替换掉即可生效。
 """
+import os
 import sys
 from os import environ
 from os.path import abspath, exists, join
+
+# p4a 不在默认导入路径里，先补上（脚本以 /tmp/bz_run2.py 运行时 cwd 不进 sys.path）
+for _p in (
+    "/home/user/hostcwd/.buildozer/android/platform/python-for-android",
+    "/root/.buildozer/android/platform/python-for-android",
+    os.path.join(environ.get("WORK_DIR", "/home/user/hostcwd"),
+                 ".buildozer/android/platform/python-for-android"),
+):
+    if _p and os.path.isdir(_p) and _p not in sys.path:
+        sys.path.insert(0, _p)
 
 import pythonforandroid.build as B
 from pythonforandroid.logger import info, info_main, warning, shprint
