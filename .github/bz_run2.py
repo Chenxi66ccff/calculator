@@ -23,11 +23,32 @@ import subprocess
 import sys
 
 # 镜像里的依赖（sh、pexpect 等）装在 /home/user/.venv，
-# 而 --entrypoint python3 用的是系统 Python。若不在 venv 里，就自我重启到 venv。
-_VENV_PY = "/home/user/.venv/bin/python3"
-if os.path.isfile(_VENV_PY) and os.path.realpath(sys.executable) != os.path.realpath(_VENV_PY):
-    print("[PATCH] re-exec into venv: %s" % _VENV_PY, flush=True)
-    os.execv(_VENV_PY, [_VENV_PY, os.path.abspath(__file__)] + sys.argv[1:])
+# 而 --entrypoint python3 可能用的是系统 Python。
+print("[PATCH] sys.executable = %s" % sys.executable, flush=True)
+print("[PATCH] sys.version = %s" % sys.version.split()[0], flush=True)
+for _d in ("/home/user/.venv/bin", "/home/user/.venv/lib"):
+    try:
+        _ls = sorted(os.listdir(_d))[:12]
+    except Exception as _e:
+        _ls = "<%s>" % _e
+    print("[PATCH] ls %s -> %s" % (_d, _ls), flush=True)
+
+# 候选解释器路径（尽量多列几个）
+_VENV_CANDS = [
+    "/home/user/.venv/bin/python3",
+    "/home/user/.venv/bin/python",
+]
+for _vp in _VENV_CANDS:
+    if os.path.isfile(_vp) and os.path.realpath(sys.executable) != os.path.realpath(_vp):
+        print("[PATCH] re-exec into venv: %s" % _vp, flush=True)
+        os.execv(_vp, [_vp, os.path.abspath(__file__)] + sys.argv[1:])
+
+# 兜底：把 venv 的 site-packages 塞进 sys.path（若存在）
+import glob as _glob
+for _sp in _glob.glob("/home/user/.venv/lib/python3*/site-packages"):
+    if _sp not in sys.path:
+        sys.path.insert(0, _sp)
+        print("[PATCH] added to sys.path: %s" % _sp, flush=True)
 
 P4A_DIR = "/home/user/hostcwd/.buildozer/android/platform/python-for-android"
 P4A_URL = "https://github.com/kivy/python-for-android.git"
