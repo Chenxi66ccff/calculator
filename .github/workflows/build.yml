@@ -16,9 +16,9 @@ jobs:
         run: |
           docker run --rm \
             -v "$GITHUB_WORKSPACE:/home/user/hostcwd" \
-            -v "$GITHUB_WORKSPACE/.github/bz_run.py:/tmp/bz_run.py:ro" \
+            -v "$GITHUB_WORKSPACE/.github/bz_run2.py:/tmp/bz_run2.py:ro" \
             --entrypoint python3 \
-            kivy/buildozer:latest /tmp/bz_run.py android debug
+            kivy/buildozer:latest /tmp/bz_run2.py android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
