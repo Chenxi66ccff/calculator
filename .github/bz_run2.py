@@ -22,6 +22,13 @@ import os
 import subprocess
 import sys
 
+# 镜像里的依赖（sh、pexpect 等）装在 /home/user/.venv，
+# 而 --entrypoint python3 用的是系统 Python。若不在 venv 里，就自我重启到 venv。
+_VENV_PY = "/home/user/.venv/bin/python3"
+if os.path.isfile(_VENV_PY) and os.path.realpath(sys.executable) != os.path.realpath(_VENV_PY):
+    print("[PATCH] re-exec into venv: %s" % _VENV_PY, flush=True)
+    os.execv(_VENV_PY, [_VENV_PY, os.path.abspath(__file__)] + sys.argv[1:])
+
 P4A_DIR = "/home/user/hostcwd/.buildozer/android/platform/python-for-android"
 P4A_URL = "https://github.com/kivy/python-for-android.git"
 
