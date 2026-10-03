@@ -16,6 +16,8 @@ jobs:
         run: |
           docker run --rm \
             -v "$GITHUB_WORKSPACE:/home/user/hostcwd" \
+            -v "$GITHUB_WORKSPACE/.github/constraints.txt:/home/user/constraints.txt:ro" \
+            -e PIP_CONSTRAINT=/home/user/constraints.txt \
             kivy/buildozer:latest \
             android debug
 
