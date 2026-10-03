@@ -1,0 +1,41 @@
+name: Diagnostic 2 - license behaviour
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Container has the setting; inspect buildozer source + config read
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/home/user/hostcwd" --entrypoint bash kivy/buildozer:latest -c '
+            set -x
+            echo "===== A. buildozer 位置与版本 ====="
+            which buildozer
+            head -3 $(which buildozer)
+            python3 -c "import buildozer;print(\"buildozer pkg:\", buildozer.__file__)" 2>&1 | tail -2
+            echo
+            echo "===== B. 源码里的 accept_sdk_license 逻辑 ====="
+            grep -rn "accept_sdk_license" $(python3 -c "import buildozer,os;print(os.path.dirname(buildozer.__file__))") 2>&1 | head -20
+            echo
+            echo "===== C. 实际读到的配置值 ====="
+            cd /home/user/hostcwd && python3 -c "
+import configparser
+c = configparser.ConfigParser()
+c.read(\"buildozer.spec\")
+print(\"sections:\", c.sections())
+print(\"has [buildozer]:\", c.has_section(\"buildozer\"))
+for sec in c.sections():
+    for k,v in c.items(sec):
+        if \"license\" in k or \"root\" in k:
+            print(\"  \", sec, \"->\", k, \"=\", repr(v))
+print(\"getboolean(\x27app\x27,\x27android.accept_sdk_license\x27,fallback=False) =\",
+      c.getboolean(\"app\",\"android.accept_sdk_license\", fallback=False) if c.has_section(\"app\") else \"NO app section\")
+"
+            echo
+            echo "===== D. buildozer.spec 在第 40-50 行 ====="
+            sed -n "38,50p" /home/user/hostcwd/buildozer.spec | cat -A | head -20
+          ' 2>&1 | tail -60
