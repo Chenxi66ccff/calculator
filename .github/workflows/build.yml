@@ -16,10 +16,18 @@ jobs:
         run: |
           docker run --rm \
             -v "$GITHUB_WORKSPACE:/home/user/hostcwd" \
-            -v "$GITHUB_WORKSPACE/.github/constraints.txt:/home/user/constraints.txt:ro" \
-            -e PIP_CONSTRAINT=/home/user/constraints.txt \
+            --entrypoint /bin/bash \
             kivy/buildozer:latest \
-            android debug
+            -c '
+              # p4a 安装纯 Python 模块前会把 pip 升级到最新（26.2.1），
+              # 该版本在 p4a 的 android 平台标记下会误判 charset-normalizer
+              # （应为 py3-none-any 通用 wheel）为不受支持，导致构建失败。
+              # 用 PIP_CONSTRAINT 把 pip 钉在镜像自带的版本。
+              printf "pip==25.3\n" > /home/user/constraints.txt
+              export PIP_CONSTRAINT=/home/user/constraints.txt
+              cd /home/user/hostcwd
+              buildozer android debug
+            '
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
