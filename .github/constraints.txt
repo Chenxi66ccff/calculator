@@ -1,6 +1,0 @@
-# p4a 在安装纯 Python 模块前会把 pip 升级到最新版（构建时为 26.2.1）。
-# 该版本在 python-for-android 的自定义平台标记（android_24_arm64_v8a）下
-# 会错误判定纯 Python 包 charset-normalizer（应为 py3-none-any 通用 wheel）
-# 为"不受支持的 wheel"，导致 requests 依赖链安装失败。
-# 通过 PIP_CONSTRAINT 把 pip 钉在 25.3（p4a 自带的、可正常工作的版本）。
-pip==25.3
