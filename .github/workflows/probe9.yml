@@ -1,0 +1,24 @@
+name: Probe9
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/probe9.yml
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull image
+        run: docker pull kivy/buildozer:latest
+
+      - name: Stage 1 prepare (expected failure)
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/home/user/hostcwd" kivy/buildozer:latest android debug || true
+
+      - name: Run build with open() spy
+        run: |
+          base64 -d .github/spy_req.b64 > "$GITHUB_WORKSPACE/spy_req.py"
+          docker run --rm             -v "$GITHUB_WORKSPACE:/home/user/hostcwd"             -v "$GITHUB_WORKSPACE/spy_req.py:/tmp/spy_req.py:ro"             -w /home/user/hostcwd/.buildozer/android/platform/python-for-android             --entrypoint /home/user/.venv/bin/python3             kivy/buildozer:latest /tmp/spy_req.py || true
