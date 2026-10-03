@@ -18,6 +18,11 @@ version = 1.0.0
 # 依赖
 requirements = python3,kivy
 
+# 自动接受 Android SDK license
+# 注意：必须写在 [app] 段内！buildozer 读取的是 [app].android.accept_sdk_license，
+# 写到 [buildozer] 段无效（configparser 不会把带点的键归并到 [app]）。
+android.accept_sdk_license = True
+
 # 图标
 icon.filename = %(source.dir)s/icon.png
 
@@ -40,4 +45,3 @@ android.permissions =
 
 log_level = 2
 warn_on_root = 0
-android.accept_sdk_license = True
