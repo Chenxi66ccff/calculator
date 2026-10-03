@@ -1,0 +1,31 @@
+name: Env probe
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/probe-env.yml
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test env var name handling
+        run: |
+          docker run --rm \
+            -e VERSION_charset-normalizer=AAA \
+            -e VERSION_charset_normalizer=BBB \
+            -e VERSION_requests=CCC \
+            --entrypoint python3 \
+            kivy/buildozer:latest -c "
+import os, sys
+print('python:', sys.version.split()[0])
+hits = sorted(k for k in os.environ if 'VERSION' in k or 'charset' in k.lower())
+print('可见的相关环境变量:', hits)
+for k in hits:
+    print('   %r = %r' % (k, os.environ[k]))
+print()
+print('用连字符名取值:', repr(os.environ.get('VERSION_charset-normalizer')))
+print('用下划线名取值:', repr(os.environ.get('VERSION_charset_normalizer')))
+"
